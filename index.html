@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf8">
+    <title></title></head>
+    <style>
+        body {margin: 0px; padding: 2px;}
+        canvas {margin: 0px; padding: 0px;}
+    </style>
+<body>
+    <button id="ngen">next gen</button>
+    <button id="start">start</button>
+    <button id="stop">stop</button>
+    <input id="interval" type="number" value="600">
+    <button id="clear">clear</button>
+    <div style="clear:both;margin-bottom: 2px;"></div>
+    <canvas id="canvas"></canvas>
+<!-- <div id="frame">
+<table id="tablegrip">
+    <tr>
+        <td>
+            test1
+        </td>
+        <td>
+            test2
+        </td>
+    </tr>
+    <tr>
+        <td>
+            1test1
+        </td>
+        <td>
+            t2est2
+        </td>
+    </tr>
+</table>
+</div> -->
+
+<script>
+(function() { /* Scope this script */
+
+function countNeighbours(grid, x, y) {
+    let amount = 0;
+
+    // first neighbour below to the left
+    // ---
+    // - -
+    // x--
+    let nX = (x == 0 ? grid.length - 1 : x - 1);
+    let nY = (y == 0 ? grid[0].length - 1 : y - 1);
+    amount += grid[nX][nY];
+
+    // second neighbour
+    // ---
+    // - -
+    // -x-
+    amount += grid[x][nY];
+
+    // third neighbour
+    // ---
+    // - -
+    // --x
+    nX = (x + 1) % grid.length;
+    amount += grid[nX][nY];
+
+    // fourth:
+    // ---
+    // - x
+    // ---
+    amount += grid[nX][y];
+
+    // fifth:
+    // --x
+    // - -
+    // ---
+    nY = (y + 1) % grid[0].length;
+    amount += grid[nX][nY];
+
+    // sixth:
+    // -x-
+    // - -
+    // ---
+    amount += grid[x][nY];
+
+    // seventh
+    // x--
+    // - -
+    // ---
+    nX = (x == 0 ? grid.length - 1 : x - 1) // back to our original X-axis
+    amount += grid[nX][nY];
+
+    // eighth
+    // ---
+    // x -
+    // ---
+    amount += grid[nX][y];
+    
+    return amount;
+}
+
+function nextGeneration() {
+    let x, y;
+    let newGrid = generateGrid(grid.length, grid[0].length);
+
+    for (y = 0; y < grid[0].length; y++) {
+        for (x = 0; x < grid.length; x++) {
+            let amountNeighbours = countNeighbours(grid, x, y);
+            if (amountNeighbours < 2) {
+                // To few, dies of underpopulation
+                newGrid[x][y] = 0;
+            } else if (amountNeighbours > 3) {
+                // Dies because of overpopulation
+                newGrid[x][y] = 0;
+            } else if (amountNeighbours == 3) {
+                // becomes alive
+                newGrid[x][y] = 1;
+            } else {
+                newGrid[x][y] = grid[x][y];
+            }
+        }
+    }
+    grid = newGrid;
+    drawGrid();
+    //generateHtmlTable();
+}
+
+function printGrid() {
+    let x = 0;
+    let y = grid[0].length - 1;
+    let line;
+
+    for (; y >= 0; y--) {
+        line = y + '|';
+        for (x = 0; x < grid.length; x++) {
+            line += ' ' + grid[x][y];
+        }
+        console.log(line);
+    }
+    
+    console.log("Y+ " + Array(grid.length).fill('-').join(' '));
+    console.log(" X " + [...Array(grid.length).keys()].join(' '));
+}
+
+function clickCell(event) {
+    let x = event.target.x;
+    let y = event.target.y;
+    grid[x][y] = grid[x][y] ? 0 : 1;
+    generateHtmlTable(grid);
+}
+
+function generateHtmlTable() {
+    let tab = document.createElement("table");
+    tab.cellPadding = 0;
+    tab.cellSpacing = 0;
+    tab.style = "display: block; margin: 0px; padding 0px; border-style: solid; border-color: #EEE; border-width: 1px;";
+    tab.width = grid.length * 50;
+    tab.height = grid[0].length * 50;
+    let x = 0;
+    let y = grid[0].length - 1;
+
+    for (; y >= 0; y--) {
+        let tr = document.createElement("tr");
+        for (x = 0; x < grid.length; x++) {
+            let td = document.createElement("td");
+            td.x = x;
+            td.y = y;
+            td.addEventListener("click", clickCell);
+            td.width = "50";
+            td.height = "50";
+            td.style = "background-color: " + (grid[x][y] ? '#000' : '#FFF') + 
+                "; border-style: solid; border-width: 1px; padding: 0px; margin: 0px;";
+            tr.appendChild(td);
+        }
+        tab.appendChild(tr);
+    }
+    let frame = document.getElementById("frame");
+    frame.innerHTML = ""; // remove all previous children
+    frame.appendChild(tab);    
+}
+
+function generateGrid(dimX, dimY) {
+    let newGrid = [];
+    /* Populate the grid with zeros */
+    for (let i = 0; i < dimX; i++) {
+        newGrid[i] = Array(dimY).fill(0);
+    }
+
+    return newGrid;
+}
+
+function drawBorder() {
+    context.beginPath();
+    context.strokeStyle="#000";
+    context.lineWidth="4";
+    context.rect(0,0, canvas.width, canvas.height);
+    context.stroke();
+}
+
+function drawGrid() {
+    const borderColor = "#000";
+
+    /* Vertical lines */
+    for (let i = 0; i < xAmountCells; i++) {
+        context.beginPath();
+        context.strokeStyle=borderColor;
+        context.lineWidth="2";
+        context.moveTo((cellWidth * i), 0);
+        context.lineTo((cellWidth * i), canvas.height);
+        context.stroke();
+    }
+
+    /* Horizontal lines */
+    for (let i = 0; i < yAmountCells; i++) {
+        context.beginPath();
+        context.strokeStyle=borderColor;
+        context.lineWidth="2";
+        context.moveTo(0, (cellHeight * i));
+        context.lineTo(canvas.width, (cellHeight * i));
+        context.stroke();
+    }
+
+    /* Draw cells */
+    let x = 0;
+    let y = grid[0].length - 1;
+
+    for (; y >= 0; y--) {
+        for (x = 0; x < grid.length; x++) {
+            colorCell(x, y, grid[x][y] ? 'black' : 'white');
+        }
+    }
+
+    drawBorder();
+}
+
+function colorCell(xCell, yCell, color) {
+    context.beginPath();
+    context.fillStyle=color;
+    context.fillRect((cellWidth * xCell) + 1, 
+                     (cellHeight * yCell) + 1, 
+                     cellWidth - 2, 
+                     cellHeight - 2);
+
+    drawBorder();
+}
+
+const canvas = document.getElementById("canvas");
+const context = canvas.getContext("2d");
+
+let xAmountCells = 75;
+let yAmountCells = 32;
+let timer = undefined;
+let grid = generateGrid(xAmountCells, yAmountCells);
+
+canvas.width = xAmountCells * 25;
+canvas.height = yAmountCells * 25;
+
+let cellWidth  = canvas.width  / xAmountCells;
+let cellHeight = canvas.height / yAmountCells;
+
+drawGrid();
+
+canvas.addEventListener('click', (event) => {    
+    const x = Math.floor((event.pageX - canvas.offsetLeft) / cellWidth);
+    const y = Math.floor((event.pageY - canvas.offsetTop) / cellHeight);
+    console.log("" + x + " " + y);
+    grid[x][y] = grid[x][y] ? 0 : 1;
+    colorCell(x, y, grid[x][y] ? "black" : "white");
+}, false);
+
+//generateHtmlTable(grid);
+
+document.getElementById("ngen").addEventListener("click", () => {
+    printGrid(grid)
+    nextGeneration(grid);
+});
+
+document.getElementById("start").addEventListener("click", () => {
+    let interval = document.getElementById("interval").value
+    if (!timer) {
+        timer = setInterval(function(){
+            nextGeneration(grid);
+        }, interval);
+    }
+});
+
+document.getElementById("stop").addEventListener("click", () => {
+    if (timer) {
+        clearInterval(timer);
+        timer = null;
+    }
+});
+
+document.getElementById("clear").addEventListener("click", () => {
+    if (timer) {
+        clearInterval(timer);
+        timer = null;
+    }
+    grid = generateGrid(grid.length, grid[0].length);
+    drawGrid();
+    //generateHtmlTable();
+})
+
+})()
+</script>
+</body>
+</html>
